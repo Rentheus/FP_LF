@@ -9,6 +9,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+import iMinuit
 
 #%% Daten Laden, struktur: R_pt, R_C, R_Cu, R_Ta, R_Si, Tpt, Tc
 
@@ -34,8 +35,10 @@ def f_T_c(r, c1, c2, c3):
     return (c2/(np.log((r-c3)/c1)))
     r#eturn (c2/(np.log(())))
     
+
+    
 data_r_pt = np.array([np.mean(data_raum[:,0]),np.mean(data_77K[:,0])])
-sigma_r_pt = np.array([np.std(data_raum[:,0],ddof=1),np.std(data_77K[:,0],ddof=1)])
+sigma_r_pt = np.array([np.std(data_raum[:,0],ddof=1),-np.std(data_77K[:,0],ddof=1)])
 data_T_pt = [273.15+20.5, 77.15]
 
 #print(data_He[-10:,1])
@@ -165,27 +168,50 @@ data_t_pt_N_plus = T_pt_plus(data_N[:,0])
 data_t_c_N_plus = T_c_plus(data_N[:,1])
 data_t_c_He_plus = T_c_plus(data_He[:,1])
 
-fig, ax = fig, ax = plt.subplots(2, 2, figsize=(15,13), layout = "tight")
+fig, ax = fig, ax = plt.subplots(2, 2, figsize=(9,7), layout = "tight")
+fig.suptitle("Evaluation of Reference Point based Systematic Error in T")
+
 
 ax[0,0].scatter(data_t_pt_N, data_t_pt_N_minus, label = "T_pt_minus")
 ax[0,0].scatter(data_t_pt_N, data_t_pt_N_plus, label = "T_pt_plus")
+ax[0,0].legend()
+ax[0,0].set_ylabel("T / K")
+ax[0,0].set_xlabel("T / K")
 
 
 ax[1,0].scatter(data_t_pt_N, data_t_pt_N - data_t_pt_N_minus, label = "T_pt - T_pt_minus")
-ax[1,0].scatter(data_t_pt_N, -data_t_pt_N + data_t_pt_N_plus, label = "T_pt_plus - T_pt")
+ax[1,0].scatter(data_t_pt_N, data_t_pt_N - data_t_pt_N_plus, label = "T_pt - T_pt_plus")
+ax[1,0].legend()
+ax[1,0].set_ylabel("delta T / K")
+ax[1,0].set_xlabel("T / K")
+
+
+
 
 ax[0,1].scatter(data_t_c_N, data_t_c_N_minus, label = "T_c_minus in N")
 ax[0,1].scatter(data_t_c_N, data_t_c_N_plus, label = "T_c_plus in N")
 
 ax[0,1].scatter(data_t_c_He, data_t_c_He_minus, label = "T_c_minus in He")
 ax[0,1].scatter(data_t_c_He, data_t_c_He_plus, label = "T_c_plus in He")
+ax[0,1].legend()
+ax[0,1].set_ylabel("T / K")
+ax[0,1].set_xlabel("T / K")
+
+
 
 
 ax[1,1].scatter(data_t_c_N, data_t_c_N - data_t_c_N_minus, label = "T_c - T_c_minus in N")
-ax[1,1].scatter(data_t_c_N, data_t_c_N - data_t_c_N_plus, label = "T_c_plus - T_c in N")
+ax[1,1].scatter(data_t_c_N, data_t_c_N - data_t_c_N_plus, label = "T_c - T_c_plus in N")
 
 ax[1,1].scatter(data_t_c_He, data_t_c_He - data_t_c_He_minus, label = "T_c - T_c_minus in He")
-ax[1,1].scatter(data_t_c_He, data_t_c_He - data_t_c_He_plus, label = "T_c_plus - T_c in He")
+ax[1,1].scatter(data_t_c_He, data_t_c_He - data_t_c_He_plus, label = "T_c - T_c_plus in He")
+ax[1,1].legend()
+ax[1,1].set_ylabel("delta T / K")
+ax[1,1].set_xlabel("T / K")
+
+
+plt.savefig("Sys_err_T_durch_Messwerte.pdf")
+
 
 plt.show()
 #plt.scatter(data_t_pt_N_plus, data_t_c_N_minus, label = "plus")
@@ -265,11 +291,18 @@ plt.show()
 def T(messwerte):
     Temperature = np.zeros(messwerte.shape[0])
     for i in range(len(Temperature)):
-        Temperature[i] = {True:T_pt(messwerte[i,0]), False: T_c_2(messwerte[i,1])}[messwerte[i,0]>22.5]
+        Temperature[i] = {True:T_pt(messwerte[i,0]), False: T_c_2(messwerte[i,1])}[messwerte[i,0]>data_T_pt[1]]
         #print(messwerte[i,0]>22.5)
 
     return Temperature
 
+def t_err(messwerte, pt_err, c_err):
+    Terr = np.zeros(messwerte.shape[0])
+    for i in range(len(Terr)):
+        Terr[i]={
+            True: abs(pt_err* 1/pt[0][0])
+            False: abs(c_err* c[0][1] /(np.log((messwerte[i,1]- c[0][2])/c[0][0])**2 * (messwerte[i,1]- c[0][2])) )
+            }
 
 
 T_N = T(data_N)
