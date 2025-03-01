@@ -9,7 +9,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-import iMinuit
+import iminuit
 
 #%% Daten Laden, struktur: R_pt, R_C, R_Cu, R_Ta, R_Si, Tpt, Tc
 
@@ -291,7 +291,7 @@ plt.show()
 def T(messwerte):
     Temperature = np.zeros(messwerte.shape[0])
     for i in range(len(Temperature)):
-        Temperature[i] = {True:T_pt(messwerte[i,0]), False: T_c_2(messwerte[i,1])}[messwerte[i,0]>data_T_pt[1]]
+        Temperature[i] = {True:T_pt(messwerte[i,0]), False: T_c(messwerte[i,1])}[messwerte[i,0]>data_T_pt[1]]
         #print(messwerte[i,0]>22.5)
 
     return Temperature
@@ -300,7 +300,7 @@ def t_err(messwerte, pt_err, c_err):
     Terr = np.zeros(messwerte.shape[0])
     for i in range(len(Terr)):
         Terr[i]={
-            True: abs(pt_err* 1/pt[0][0])
+            True: abs(pt_err* 1/pt[0][0]),
             False: abs(c_err* c[0][1] /(np.log((messwerte[i,1]- c[0][2])/c[0][0])**2 * (messwerte[i,1]- c[0][2])) )
             }
 
@@ -318,6 +318,10 @@ plt.scatter(1/(T_He[Si_filter]), np.log(1/(data_He[:,4][Si_filter])))
 #plt.scatter(T_He[Si_filter], data_He[:,4][Si_filter])
 #plt.yscale("log")
 #plt.xscale("log")
+plt.show()
+
+plt.scatter(T_He[-300:], data_He[-300:,2])
+plt.scatter(T_He[-300:], data_He[-300:,3])
 plt.show()
 
 
