@@ -9,7 +9,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-import iMinuit
 
 #%% Daten Laden, struktur: R_pt, R_C, R_Cu, R_Ta, R_Si, Tpt, Tc
 
@@ -291,7 +290,7 @@ plt.show()
 def T(messwerte):
     Temperature = np.zeros(messwerte.shape[0])
     for i in range(len(Temperature)):
-        Temperature[i] = {True:T_pt(messwerte[i,0]), False: T_c_2(messwerte[i,1])}[messwerte[i,0]>data_T_pt[1]]
+        Temperature[i] = {True:T_pt(messwerte[i,0]), False: T_c(messwerte[i,1])}[messwerte[i,0]>data_r_pt[1]]
         #print(messwerte[i,0]>22.5)
 
     return Temperature
@@ -300,14 +299,16 @@ def t_err(messwerte, pt_err, c_err):
     Terr = np.zeros(messwerte.shape[0])
     for i in range(len(Terr)):
         Terr[i]={
-            True: abs(pt_err* 1/pt[0][0])
-            False: abs(c_err* c[0][1] /(np.log((messwerte[i,1]- c[0][2])/c[0][0])**2 * (messwerte[i,1]- c[0][2])) )
-            }
+            True: abs(pt_err[i]* 1/pt[0][0]),
+            False: abs(c_err[i]* c[0][1] /(np.log((messwerte[i,1]- c[0][2])/c[0][0])**2 * (messwerte[i,1]- c[0][2])) )
+            }[messwerte[i,0]>data_r_pt[1]]
+    return Terr
 
 
 T_N = T(data_N)
 T_He = T(data_He)
 
+#print(T_N)
 Si_filter = data_He[:,4]<0.5*10**38
 #print(Si_filter)
 
@@ -320,6 +321,160 @@ plt.scatter(1/(T_He[Si_filter]), np.log(1/(data_He[:,4][Si_filter])))
 #plt.xscale("log")
 plt.show()
 
+#%%
+def lfit(x, a, b):
+    return a*x+b
 
+
+
+Pt = data_N[:,0]
+C = data_N[:,1]
+Cu = data_N[:,2]
+Ta = data_N[:,3]
+Si = data_N[:,4]
+#%%
+
+l = 1
+Intervalle_N = []
+
+for x in range(0, len(data_N[:,0])):
+    if x == len(data_N[:,0])-1:
+        Intervalle_N.append(l)
+    else:
+        if data_N[:,0][x] - data_N[:,0][x+1] < 0.07:
+            l += 1
+        else:
+            Intervalle_N.append(l)
+            l = 1
+
+Intervalle_N[len(Intervalle_N)-1] = 12
+Intervalle_N.append(12)
+#print(len(Intervalle_N))
+#print(np.sum(Intervalle_N))
+
+l = 1
+Intervalle_He = []
+
+for x in range(len(data_He[:,0])):
+    #print(x)
+    if x == len(data_He[:,0])-1:
+        Intervalle_He.append(l)
+    else:
+        if data_He[:,1][x] - data_He[:,1][x+1] < data_He[:,1][x]*0.1:
+            print(data_He[:,1][x]*0.1)
+            l += 1
+        else:
+            Intervalle_He.append(l)
+            l = 1
+print(Intervalle_He)
+#print(sum(Intervalle_He))
+#print(len(data_He[:,1]))
+# Intervalle_He[len(Intervalle_He)-1] = 12
+# Intervalle_He.append(12)
+#print(len(Intervalle_He))
+#print(np.sum(Intervalle_He))
+#%%
+
+
+
+def statsigma_N(Intervalle, Stoff, plot = "nein"):
+    
+    s=0
+    
+    statsigma_N = []
+    
+    
+    if plot == "ja":
+        for n in Intervalle:
+            
+            
+            
+            
+            Pt_k = Pt[s:s+n]
+            y_k = Stoff[s:s+n]
+            
+            params = curve_fit(lfit, T_pt(Pt_k), y_k)
+            lfitn = lambda r : lfit(r, params[0][0], params[0][1])
+            
+            
+            
+            plt.scatter(T_pt(Pt_k), y_k)
+            plt.plot(T_pt(Pt_k), lfitn(T_pt(Pt_k)))
+            plt.show()
+            
+            
+            
+            zwischenergebnis = 0
+            
+            for i in range(0, len(Pt_k)):
+                zwischenergebnis += ( y_k[i] - lfitn(T_pt(Pt_k[i])) )**2
+            
+            sig = np.sqrt( (1/(len(Pt_k) - 2)) * zwischenergebnis )
+            
+            
+            
+            s=s+n
+            for i in range(n):
+                statsigma_N.append(sig)
+        return statsigma_N
+    
+    else:
+        for n in Intervalle:
+            Pt_k = Pt[s:s+n]
+            y_k = Stoff[s:s+n]
+            
+            params = curve_fit(lfit, T_pt(Pt_k), y_k)
+            lfitn = lambda r : lfit(r, params[0][0], params[0][1])
+            
+            zwischenergebnis = 0
+            
+            for i in range(0, len(Pt_k)):
+                zwischenergebnis += ( y_k[i] - lfitn(T_pt(Pt_k[i])) )**2
+            
+            sig = np.sqrt( (1/(len(Pt_k) - 2)) * zwischenergebnis )
+            
+            
+            
+            s=s+n
+            for i in range(n):  
+                statsigma_N.append(sig)
+        return statsigma_N
+
+
+
+#%%        
+   
+sig_Pt_N = statsigma_N(Intervalle_N, Pt)
+sig_C_N = statsigma_N(Intervalle_N, C)
+sig_Cu_N = statsigma_N(Intervalle_N, Cu)
+sig_Ta_N = statsigma_N(Intervalle_N, Ta)
+sig_Si_N = statsigma_N(Intervalle_N, Si)
+
+sig_Pt_He = statsigma_N(Intervalle_He, data_He[:,0])
+sig_C_He = statsigma_N(Intervalle_He, data_He[:,1])
+sig_Cu_He = statsigma_N(Intervalle_He, data_He[:,2])
+sig_Ta_He = statsigma_N(Intervalle_He, data_He[:,3], plot = "ja")
+sig_Si_He = statsigma_N(Intervalle_He, data_He[:,4])
+
+#print(sig_Pt_N)
+
+Terr_N = t_err(data_N, sig_Pt_N, sig_C_N)
+Terr_He = t_err(data_He, sig_Pt_He, sig_C_He)
+#%% Tantalum temp
+
+
+fig, ax = fig, ax = plt.subplots(2, 1, figsize=(9,7), layout = "tight")
+
+ax[0].errorbar(T_N, data_N[:,3], sig_Ta_N, Terr_N,  label= "Measured Tantalum Resistances, N")
+ax[0].errorbar(T_He, data_He[:,3], sig_Ta_He, Terr_He, label= "Measured Tantalum Resistances, He")
+
+
+Ta_small_filter = data_He[:,3]<1
+
+Ta_small = data_He[:,3][data_He[:,3]<1]
+T_Ta_small = T_He[Ta_small_filter]
+ax[1].errorbar(T_Ta_small, Ta_small,np.array(sig_Ta_He)[Ta_small_filter], Terr_He[Ta_small_filter],  label= "Measured Tantalum Resistance")
+
+plt.show()
 
 
