@@ -320,8 +320,11 @@ plt.scatter(1/(T_He[Si_filter]), np.log(1/(data_He[:,4][Si_filter])))
 #plt.xscale("log")
 plt.show()
 
-plt.scatter(T_He[-300:], data_He[-300:,2])
-plt.scatter(T_He[-300:], data_He[-300:,3])
+plt.scatter(T_He[-300:], data_He[-300:,2], label = "CU")
+plt.scatter(T_He[-300:], data_He[-300:,3], label = "'TA' + CU")
+plt.legend()
+plt.ylabel("$R  [\Omega]$")
+plt.xlabel("$T  [K]$")
 plt.show()
 
 
