@@ -593,49 +593,130 @@ ax[0].errorbar(T_N, data_N[:, 0], sig_Pt_N, Terr_N, label = "Resistances Pt100, 
 ax[0].errorbar(T_He, data_He[:, 0], sig_Pt_He, Terr_He, label = "Resistances Pt100, He", fmt = ".")
 ax[0].set_xlabel("$T [K]$")
 ax[0].set_ylabel("$R [\Omega]$")
+ax[0].title.set_text("Resistance Measurement Pt100")
 ax[0].legend()
 
 ax[1].errorbar(T_N, data_N[:, 1], sig_C_N, Terr_N, label = "Resistances C, N", fmt = ".")
 ax[1].errorbar(T_He, data_He[:, 1], sig_C_He, Terr_He, label = "Resistances C, He", fmt = ".")
 ax[1].set_xlabel("$T [K]$")
 ax[1].set_ylabel("$R [\Omega]$")
+ax[1].title.set_text("Resistance Measurement Carbon Resistor")
 ax[1].legend()
 
 ax[2].errorbar(T_N, data_N[:, 2], sig_Cu_N, Terr_N, label = "Resistances Cu, N", fmt = ".")
 ax[2].errorbar(T_He, data_He[:, 2], sig_Cu_He, Terr_He, label = "Resistances Cu, He", fmt = ".")
 ax[2].set_xlabel("$T [K]$")
 ax[2].set_ylabel("$R [\Omega]$")
+ax[2].title.set_text("Resistance Measurement Copper")
 ax[2].legend()
 
 ax[3].errorbar(T_N, data_N[:, 3], sig_Ta_N, Terr_N, label = "Resistances Ta, N", fmt = ".")
 ax[3].errorbar(T_He, data_He[:, 3], sig_Ta_He, Terr_He, label = "Resistances Ta, He", fmt = ".")
 ax[3].set_xlabel("$T [K]$")
 ax[3].set_ylabel("$R [\Omega]$")
+ax[3].title.set_text("Resistance Measurement Tantal, raw")
 ax[3].legend()
 
 ax[4].errorbar(T_N, data_N[:, 4], sig_Si_N, Terr_N, label = "Resistances Si, N", fmt = ".")
 ax[4].errorbar(T_He[Si_filter], data_He[Si_filter][:, 4], sig_Si_He[Si_filter], Terr_He[Si_filter], label = "Resistances Si, He", fmt = ".")
 ax[4].set_xlabel("$T [K]$")
 ax[4].set_ylabel("$R [\Omega]$")
+ax[4].title.set_text("Resistance Measurement Silicon")
 ax[4].legend()
 
 plt.show()
-#%% Tantalum temp
+
+
+#%% Tantalum problem
 
 
 fig, ax = fig, ax = plt.subplots(2, 1, figsize=(9,7), layout = "tight")
 
-ax[0].errorbar(T_N, data_N[:,3], sig_Ta_N, Terr_N,  label= "Measured Tantalum Resistances, N")
-ax[0].errorbar(T_He, data_He[:,3], sig_Ta_He, Terr_He, label= "Measured Tantalum Resistances, He")
+ax[0].errorbar(T_N, data_N[:,3], sig_Ta_N, Terr_N,  label= "Measured Tantalum Resistances, N", fmt = ".", color = "deepskyblue")
+ax[0].errorbar(T_He, data_He[:,3], sig_Ta_He, Terr_He, label= "Measured Tantalum Resistances, He" , fmt = ".", color = "blue")
 
+ax[0].errorbar(T_N, data_N[:,2], sig_Cu_N, Terr_N,  label= "Measured Copper Resistances, N", fmt = ".", color = "orange")
+ax[0].errorbar(T_He, data_He[:,2], sig_Cu_He, Terr_He, label= "Measured Copper Resistances, He" , fmt = ".", color = "darkorange")
+
+ax[0].set_ylabel("$R [\Omega]$")
+ax[0].set_xlabel("$T [K]$")
+ax[0].title.set_text("Comparison Copper and Tantalum Resistance")
+ax[0].legend()
 
 Ta_small_filter = data_He[:,3]<1
 
 Ta_small = data_He[:,3][data_He[:,3]<1]
+Cu_small = data_He[:,2][data_He[:,3]<1]
 T_Ta_small = T_He[Ta_small_filter]
-ax[1].errorbar(T_Ta_small, Ta_small,np.array(sig_Ta_He)[Ta_small_filter], Terr_He[Ta_small_filter],  label= "Measured Tantalum Resistance")
+ax[1].errorbar(T_Ta_small, Ta_small,np.array(sig_Ta_He)[Ta_small_filter], Terr_He[Ta_small_filter],  label= "Measured Tantalum Resistance", fmt = ".", color = "blue", alpha =0.8) 
+ax[1].errorbar(T_Ta_small, Cu_small,np.array(sig_Cu_He)[Ta_small_filter], Terr_He[Ta_small_filter],  label= "Measured Copper Resistance", fmt = "x", color = "darkorange", alpha = 0.8)
 
+ax[1].set_ylabel("$R [\Omega]$")
+ax[1].set_xlabel("$T [K]$")
+ax[1].legend()
 plt.show()
+
+Ta_new_N = data_N[:,3] -data_N[:,2]
+Ta_new_He = data_He[:,3] -data_He[:,2]
+
+
+sig_Ta_new_N = np.sqrt(sig_Ta_N**2 + sig_Cu_N**2)
+sig_Ta_new_He = np.sqrt(sig_Ta_He**2 + sig_Cu_He**2)
+
+#%% Cu, Ta, diagrams
+
+
+#Cu
+fig, ax = fig, ax = plt.subplots(2, 1, figsize=(10,10), layout = "tight")
+
+ax[0].errorbar(T_N, data_N[:, 2], sig_Cu_N, Terr_N, label = "Resistances Cu, N", fmt = ".")
+ax[0].errorbar(T_He, data_He[:, 2], sig_Cu_He, Terr_He, label = "Resistances Cu, He", fmt = ".")
+ax[0].set_xlabel("$T [K]$")
+ax[0].set_ylabel("$R [\Omega]$")
+ax[0].title.set_text("Resistance Measurement Cu")
+ax[0].legend()
+
+ax[1].errorbar(T_N, data_N[:, 2], sig_Cu_N, Terr_N, label = "Resistances Cu, N", fmt = ".")
+ax[1].errorbar(T_He, data_He[:, 2], sig_Cu_He, Terr_He, label = "Resistances Cu, He", fmt = ".")
+ax[1].set_xlabel("$T [K]$")
+ax[1].set_ylabel("$R [\Omega]$")
+#ax[1].title.set_text("Resistance Measurement Cu")
+ax[1].set_yscale("log")
+ax[1].set_xscale("log")
+
+ax[1].legend()
+plt.show()
+
+
+#Ta
+fig, ax = fig, ax = plt.subplots(2, 1, figsize=(10,10), layout = "tight")
+
+ax[0].errorbar(T_N, Ta_new_N, sig_Ta_new_N, Terr_N, label = "Resistances Ta, N", fmt = ".")
+ax[0].errorbar(T_He, Ta_new_He, sig_Ta_new_He, Terr_He, label = "Resistances Ta, He", fmt = ".")
+ax[0].set_xlabel("$T [K]$")
+ax[0].set_ylabel("$R [\Omega]$")
+ax[0].title.set_text("Resistance Measurement Ta")
+ax[0].legend()
+
+ax[1].errorbar(T_N, Ta_new_N, sig_Ta_new_N, Terr_N, label = "Resistances Ta, N", fmt = ".")
+ax[1].errorbar(T_He, Ta_new_He, sig_Ta_new_He, Terr_He, label = "Resistances Ta, He", fmt = ".")
+ax[1].set_xlabel("$T [K]$")
+ax[1].set_ylabel("$R [\Omega]$")
+#ax[1].title.set_text("Resistance Measurement Cu")
+ax[1].set_yscale("log")
+ax[1].set_xscale("log")
+
+ax[1].legend()
+plt.show()
+
+#%% linear regime
+
+# fit  R = T_0(1 -alpha*T ), T in C
+
+def lin_approx(T, T_0, alpha):
+    return T_0(1-alpha*T)
+
+
 
 #%%ta sprungtemp
 print(data_He[-100:-40, 1])
