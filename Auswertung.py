@@ -709,14 +709,155 @@ ax[1].set_xscale("log")
 ax[1].legend()
 plt.show()
 
-#%% linear regime
+#%% linear regime cu
 
-# fit  R = T_0(1 -alpha*T ), T in C
-
-def lin_approx(T, T_0, alpha):
-    return T_0(1-alpha*T)
+# fit  R = R_0(1 -alpha*T ), T in C
 
 
+#join data for he and N
+T_joined = np.concatenate((T_N, T_He))
+T_joined_err = np.concatenate((Terr_N, Terr_He))
+
+Cu_joined = np.concatenate((data_N[:,2], data_He[:,2]))
+Cu_joined_err = np.concatenate((sig_C_N, sig_C_He))
+
+Cu_lin_selector = Cu_joined>8
+    
+#cu to T_raum 
+T_joined = T_joined - 273.15
+
+def lin_approx(T, R_0, alpha):
+    return R_0*(1-alpha*T)
+
+def chi2_lin(fit_func, x, y, xerr, yerr, R_0, alpha):
+    'chi2 für linearen fit'
+    chi2_value = 0
+    #for i in range(len(x)):
+    model = fit_func(x, R_0 = R_0, alpha = alpha)
+    chi2_value = np.sum(((y - model) / np.sqrt(yerr**2 + (np.gradient(model, x) * xerr)**2))**2)
+    return chi2_value
+
+
+
+chi_lin_cu = lambda R_zero, Alpha: chi2_lin(lin_approx, T_joined[Cu_lin_selector], Cu_joined[Cu_lin_selector], T_joined_err[Cu_lin_selector], Cu_joined_err[Cu_lin_selector], R_zero, Alpha)
+
+
+m_cu = iminuit.Minuit(chi_lin_cu, R_zero = 22.5, Alpha = -0.003)
+
+print(m_cu.migrad())
+model = lin_approx(T_joined[Cu_lin_selector], m_cu.values["R_zero"], m_cu.values["Alpha"])
+#plt.errorbar(T_joined[Cu_lin_selector], Cu_joined[Cu_lin_selector],Cu_joined_err[Cu_lin_selector], T_joined_err[Cu_lin_selector], fmt = ".")
+#plt.plot(T_joined[Cu_lin_selector], model)
+#plt.show()
+
+fig, ax = fig, ax = plt.subplots(2, 1, figsize=(10,7), layout = "tight",sharex=True, gridspec_kw={'height_ratios': [5, 2]})
+ax[0].errorbar(T_joined[Cu_lin_selector], Cu_joined[Cu_lin_selector],Cu_joined_err[Cu_lin_selector], T_joined_err[Cu_lin_selector], fmt = ".")
+ax[0].plot(T_joined[Cu_lin_selector], model)
+ax[0].title.set_text("Lin Fit Cu TODO Change")
+sigmaRes = np.sqrt(1/(m_cu.values["R_zero"]*m_cu.values["Alpha"])*Cu_joined_err[Cu_lin_selector] **2 + T_joined_err[Cu_lin_selector]**2)
+
+
+ax[1].axhline(y=0., color='black', linestyle='--', zorder = 4)
+ax[1].errorbar(T_joined[Cu_lin_selector], Cu_joined[Cu_lin_selector]-model,sigmaRes, fmt = ".")
+
+
+ax[1].set_ylabel('$U_R- R_fit*I$ [$I$] ')
+ax[1].set_xlabel('$I$ [$A$] ')
+ymax = max([abs(x) for x in ax[1].get_ylim()])
+ax[1].set_ylim(-ymax, ymax)
+ax[1].legend(fontsize = 13)
+
+#fig.text(0.5,0, f'R = ({res})$\Omega$,'+' $\sigma_{R,sys}$ = '+f'{sigma_R_sys:0.2f}$\Omega$ , b = ({b})V, chi2/dof = {chisq:.1f} / {dof} = {chindof:.3f} ', horizontalalignment = "center")
+fig.subplots_adjust(hspace=0.0)
+plt.show()
+
+
+#%%linear regime Ta
+
+
+# fit  R = R_0(1 -alpha*T ), T in C
+
+
+#join data for he and N
+T_joined = np.concatenate((T_N, T_He))
+T_joined_err = np.concatenate((Terr_N, Terr_He))
+
+Ta_joined = np.concatenate((Ta_new_N, Ta_new_He))
+Ta_joined_err = np.concatenate((sig_Ta_new_N, sig_Ta_new_He))
+
+Ta_lin_selector = Ta_joined>13
+    
+#cu to T_raum 
+T_joined = T_joined - 273.15
+
+
+
+chi_lin_Ta = lambda R_zero, Alpha: chi2_lin(lin_approx, T_joined[Ta_lin_selector], Ta_joined[Ta_lin_selector], T_joined_err[Ta_lin_selector], Ta_joined_err[Ta_lin_selector], R_zero, Alpha)
+
+
+m_ta = iminuit.Minuit(chi_lin_Ta, R_zero = 22.5, Alpha = -0.003)
+
+print(m_ta.migrad())
+model = lin_approx(T_joined[Ta_lin_selector], m_ta.values["R_zero"], m_ta.values["Alpha"])
+#plt.errorbar(T_joined[Ta_lin_selector], Ta_joined[Ta_lin_selector],Ta_joined_err[Ta_lin_selector], T_joined_err[Ta_lin_selector], fmt = ".")
+#plt.plot(T_joined[Ta_lin_selector], model)
+#plt.show()
+
+fig, ax = fig, ax = plt.subplots(2, 1, figsize=(10,7), layout = "tight",sharex=True, gridspec_kw={'height_ratios': [5, 2]})
+ax[0].errorbar(T_joined[Ta_lin_selector], Ta_joined[Ta_lin_selector],Ta_joined_err[Ta_lin_selector], T_joined_err[Ta_lin_selector], fmt = ".")
+ax[0].plot(T_joined[Ta_lin_selector], model)
+ax[0].title.set_text("Lin Fit Ta TODO Change")
+sigmaRes = np.sqrt(1/(m_cu.values["R_zero"]*m_cu.values["Alpha"])*Ta_joined_err[Ta_lin_selector] **2 + T_joined_err[Ta_lin_selector]**2)
+
+
+ax[1].axhline(y=0., color='black', linestyle='--', zorder = 4)
+ax[1].errorbar(T_joined[Ta_lin_selector], Ta_joined[Ta_lin_selector]-model,sigmaRes, fmt = ".")
+
+
+ax[1].set_ylabel('$U_R- R_fit*I$ [$I$] ')
+ax[1].set_xlabel('$I$ [$A$] ')
+ymax = max([abs(x) for x in ax[1].get_ylim()])
+ax[1].set_ylim(-ymax, ymax)
+ax[1].legend(fontsize = 13)
+
+#fig.text(0.5,0, f'R = ({res})$\Omega$,'+' $\sigma_{R,sys}$ = '+f'{sigma_R_sys:0.2f}$\Omega$ , b = ({b})V, chi2/dof = {chisq:.1f} / {dof} = {chindof:.3f} ', horizontalalignment = "center")
+fig.subplots_adjust(hspace=0.0)
+plt.show()
+
+
+#%%non lin fit
+def non_lin_approx(t, R_0, alpha, beta):
+    return R_0 + alpha*t**beta
+
+def chi2_nonlin(fit_func, x, y, xerr, yerr, R_0, alpha, beta):
+    'chi2 für linearen fit'
+    chi2_value = 0
+    model = fit_func(x, R_0 = R_0, alpha = alpha, beta=beta)
+    chi2_value = np.sum(((y - model) / np.sqrt(yerr**2 + (np.gradient(model, x) * xerr)**2))**2)
+    return chi2_value
+
+
+#%%
+
+
+# fit  R = R_0(1 -alpha*T ), T in C
+
+
+#join data for he and N
+T_joined = np.concatenate((T_N, T_He))
+T_joined_err = np.concatenate((Terr_N, Terr_He))
+
+Cu_joined = np.concatenate((data_N[:,2], data_He[:,2]))
+Cu_joined_err = np.concatenate((sig_C_N, sig_C_He))
+
+
+sel = Cu_joined<8
+#Cu_lin_selector = Cu_joined>8
+
+chi_nonlin_Cu = lambda R_zero, Alpha, Beta: chi2_nonlin(non_lin_approx, T_joined[sel], Cu_joined[sel], T_joined_err[sel], Cu_joined_err[sel], R_zero, Alpha, Beta)
+
+m_cu_2 = iminuit.Minuit(chi_nonlin_Cu, R_zero = 1, Alpha = 0.003, Beta = 5.1)
+print(m_cu_2.migrad())
 
 #%%ta sprungtemp
 print(data_He[-100:-40, 1])
