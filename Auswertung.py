@@ -563,10 +563,10 @@ sig_Ta_N = statsigma_N(Intervalle_N, Ta)
 sig_Si_N = statsigma_N(Intervalle_N, Si)
 
 sig_Pt_He = statsigma_He(Intervalle_He, data_He[:,0])
-sig_C_He = statsigma_He(Intervalle_He, data_He[:,1])
-sig_Cu_He = statsigma_He(Intervalle_He, data_He[:,2])
+sig_C_He = statsigma_He(Intervalle_He, data_He[:,1], plot = "nein")
+sig_Cu_He = statsigma_He(Intervalle_He, data_He[:,2], plot= "nein")
 sig_Ta_He = statsigma_He(Intervalle_He, data_He[:,3], plot = "nein")
-sig_Si_He = statsigma_He(Intervalle_He, data_He[:,4])
+sig_Si_He = statsigma_He(Intervalle_He, data_He[:,4], plot= "ja")
 
 #print(sig_Ta_He)
 
@@ -728,7 +728,7 @@ T_joined_err = np.concatenate((Terr_N, Terr_He))
 Cu_joined = np.concatenate((data_N[:,2], data_He[:,2]))
 Cu_joined_err = np.concatenate((sig_C_N, sig_C_He))
 
-Cu_lin_selector = Cu_joined>8
+Cu_lin_selector = Cu_joined>6
     
 #cu to T_raum 
 T_joined = T_joined - 273.15
@@ -750,32 +750,37 @@ chi_lin_cu = lambda R_zero, Alpha: chi2_lin(lin_approx, T_joined[Cu_lin_selector
 
 
 m_cu = iminuit.Minuit(chi_lin_cu, R_zero = 22.5, Alpha = -0.003)
-
 print(m_cu.migrad())
+print(m_cu.errors)
+print(m_cu.fval)
 model = lin_approx(T_joined[Cu_lin_selector], m_cu.values["R_zero"], m_cu.values["Alpha"])
 #plt.errorbar(T_joined[Cu_lin_selector], Cu_joined[Cu_lin_selector],Cu_joined_err[Cu_lin_selector], T_joined_err[Cu_lin_selector], fmt = ".")
 #plt.plot(T_joined[Cu_lin_selector], model)
 #plt.show()
 
 fig, ax = fig, ax = plt.subplots(2, 1, figsize=(10,7), layout = "tight",sharex=True, gridspec_kw={'height_ratios': [5, 2]})
-ax[0].errorbar(T_joined[Cu_lin_selector], Cu_joined[Cu_lin_selector],Cu_joined_err[Cu_lin_selector], T_joined_err[Cu_lin_selector], fmt = ".")
-ax[0].plot(T_joined[Cu_lin_selector], model)
-ax[0].title.set_text("Lin Fit Cu TODO Change")
+ax[0].errorbar(T_joined[Cu_lin_selector], Cu_joined[Cu_lin_selector],Cu_joined_err[Cu_lin_selector], T_joined_err[Cu_lin_selector], fmt = ".", label = "measurements")
+ax[0].plot(T_joined[Cu_lin_selector], model, label = "fit")
+ax[0].legend(fontsize = 13)
+ax[0].title.set_text("Linear regime with Fit, Copper")
+ax[0].set_ylabel("$R_{Cu}$ [$\Omega$]")
 sigmaRes = np.sqrt(Cu_joined_err[Cu_lin_selector] **2 +(np.gradient(model,T_joined[Cu_lin_selector]) * T_joined_err[Cu_lin_selector])**2)
 
 
 ax[1].axhline(y=0., color='black', linestyle='--', zorder = 4)
-ax[1].errorbar(T_joined[Cu_lin_selector], Cu_joined[Cu_lin_selector]-model,sigmaRes, fmt = ".")
+ax[1].errorbar(T_joined[Cu_lin_selector], Cu_joined[Cu_lin_selector]-model,sigmaRes, fmt = ".", label = "residuals")
 
 
-ax[1].set_ylabel('$U_R- R_fit*I$ [$I$] ')
-ax[1].set_xlabel('$I$ [$A$] ')
+ax[1].set_ylabel('$R_{Cu}- R_{fit}$ [$\Omega$] ')
+ax[1].set_xlabel('$T$ [$°C$] ')
 ymax = max([abs(x) for x in ax[1].get_ylim()])
 ax[1].set_ylim(-ymax, ymax)
 ax[1].legend(fontsize = 13)
 
-#fig.text(0.5,0, f'R = ({res})$\Omega$,'+' $\sigma_{R,sys}$ = '+f'{sigma_R_sys:0.2f}$\Omega$ , b = ({b})V, chi2/dof = {chisq:.1f} / {dof} = {chindof:.3f} ', horizontalalignment = "center")
+
+fig.text(0.5,0, f'α = ({ m_cu.values["Alpha"]:.8f} +/-{ m_cu.errors["Alpha"]:.8f})'+'$K^{-1}$, $R_0$'+f'= ({ m_cu.values["R_zero"]:.3f} +/-{ m_cu.errors["R_zero"]:.3f} )$\Omega$, chi2/dof = {m_cu.fval:.1f} / {len(Cu_lin_selector - 2)}', horizontalalignment = "center")
 fig.subplots_adjust(hspace=0.0)
+plt.savefig("linfit_cu.pdf")
 plt.show()
 
 
@@ -792,7 +797,7 @@ T_joined_err = np.concatenate((Terr_N, Terr_He))
 Ta_joined = np.concatenate((Ta_new_N, Ta_new_He))
 Ta_joined_err = np.concatenate((sig_Ta_new_N, sig_Ta_new_He))
 
-Ta_lin_selector = Ta_joined>13
+Ta_lin_selector = Ta_joined>10
     
 #cu to T_raum 
 T_joined = T_joined - 273.15
@@ -811,30 +816,34 @@ model = lin_approx(T_joined[Ta_lin_selector], m_ta.values["R_zero"], m_ta.values
 #plt.show()
 
 fig, ax = fig, ax = plt.subplots(2, 1, figsize=(10,7), layout = "tight",sharex=True, gridspec_kw={'height_ratios': [5, 2]})
-ax[0].errorbar(T_joined[Ta_lin_selector], Ta_joined[Ta_lin_selector],Ta_joined_err[Ta_lin_selector], T_joined_err[Ta_lin_selector], fmt = ".")
-ax[0].plot(T_joined[Ta_lin_selector], model)
-ax[0].title.set_text("Lin Fit Ta TODO Change")
+ax[0].errorbar(T_joined[Ta_lin_selector], Ta_joined[Ta_lin_selector],Ta_joined_err[Ta_lin_selector], T_joined_err[Ta_lin_selector], fmt = ".", label = "measurements")
+ax[0].plot(T_joined[Ta_lin_selector], model, label = "fit")
+ax[0].title.set_text("Linear regime with Fit, Copper")
+ax[0].set_ylabel("$R_{Ta} [\Omega]$")
+ax[0].legend(fontsize = 13)
+
 sigmaRes = np.sqrt(Ta_joined_err[Ta_lin_selector] **2 + (np.gradient(model,T_joined[Ta_lin_selector] )*T_joined_err[Ta_lin_selector])**2)
 
 
 ax[1].axhline(y=0., color='black', linestyle='--', zorder = 4)
-ax[1].errorbar(T_joined[Ta_lin_selector], Ta_joined[Ta_lin_selector]-model,sigmaRes, fmt = ".")
+ax[1].errorbar(T_joined[Ta_lin_selector], Ta_joined[Ta_lin_selector]-model,sigmaRes, fmt = ".", label = "residuals")
 
 
-ax[1].set_ylabel('$U_R- R_fit*I$ [$I$] ')
-ax[1].set_xlabel('$I$ [$A$] ')
+ax[1].set_ylabel('$R_{Ta}- R_{fit}$ [$\Omega$] ')
+ax[1].set_xlabel('$T$ [$°C$] ')
 ymax = max([abs(x) for x in ax[1].get_ylim()])
 ax[1].set_ylim(-ymax, ymax)
 ax[1].legend(fontsize = 13)
 
-#fig.text(0.5,0, f'R = ({res})$\Omega$,'+' $\sigma_{R,sys}$ = '+f'{sigma_R_sys:0.2f}$\Omega$ , b = ({b})V, chi2/dof = {chisq:.1f} / {dof} = {chindof:.3f} ', horizontalalignment = "center")
+fig.text(0.5,0, f'α = ({ m_ta.values["Alpha"]:.8f} +/-{ m_ta.errors["Alpha"]:.8f})'+'$K^{-1}$, $R_0$'+f'= ({ m_ta.values["R_zero"]:.5f} +/-{ m_ta.errors["R_zero"]:.5f} )$\Omega$, chi2/dof = {m_cu.fval:.1f} / {len(Ta_lin_selector - 2)}', horizontalalignment = "center")
 fig.subplots_adjust(hspace=0.0)
+plt.savefig("ta_linfit.pdf")
 plt.show()
 
 
 #%%non lin fit
 def non_lin_approx(t, R_0, alpha, beta):
-    return R_0 + alpha*t**beta
+    return R_0 + alpha*t**beta 
 
 def chi2_nonlin(fit_func, x, y, xerr, yerr, R_0, alpha, beta):
     'chi2 für linearen fit'
@@ -845,6 +854,7 @@ def chi2_nonlin(fit_func, x, y, xerr, yerr, R_0, alpha, beta):
 
 
 #%%
+#TODO besserer fit
 
 
 # fit  R = R_0(1 -alpha*T ), T in C
@@ -855,15 +865,17 @@ T_joined = np.concatenate((T_N, T_He))
 T_joined_err = np.concatenate((Terr_N, Terr_He))
 
 Cu_joined = np.concatenate((data_N[:,2], data_He[:,2]))
-Cu_joined_err = np.concatenate((sig_C_N, sig_C_He))
+Cu_joined_err = np.concatenate((sig_Cu_N, sig_Cu_He))
 
 
 sel = Cu_joined<8
+print(sel)
+
 #Cu_lin_selector = Cu_joined>8
 
 chi_nonlin_Cu = lambda R_zero, Alpha, Beta: chi2_nonlin(non_lin_approx, T_joined[sel], Cu_joined[sel], T_joined_err[sel], Cu_joined_err[sel], R_zero, Alpha, Beta)
 
-m_cu_2 = iminuit.Minuit(chi_nonlin_Cu, R_zero = 1, Alpha = 0.003, Beta = 5.1)
+m_cu_2 = iminuit.Minuit(chi_nonlin_Cu, R_zero = 1, Alpha = 0.003, Beta = 5,)
 print(m_cu_2.migrad())
 
 
@@ -872,30 +884,151 @@ model = non_lin_approx(T_joined[sel], m_cu_2.values["R_zero"], m_cu_2.values["Al
 fig, ax = fig, ax = plt.subplots(2, 1, figsize=(10,7), layout = "tight",sharex=True, gridspec_kw={'height_ratios': [5, 2]})
 
 
-ax[0].errorbar(T_joined[sel],Cu_joined[sel],Cu_joined_err[sel],T_joined_err[sel], fmt=  ".")
-ax[0].scatter(T_joined[sel], model, color= "orange")
-
+ax[0].errorbar(T_joined[sel],Cu_joined[sel],Cu_joined_err[sel],T_joined_err[sel], fmt=  ".", label = "measurements")
+ax[0].scatter(T_joined[sel], model, color= "orange", label = "fit")
+ax[0].set_ylabel("$R_{Cu}$ [$\Omega$]")
+ax[0].legend(fontsize = 13)
+ax[0].title.set_text("nonlinear fit, copper")
 
 sigmaRes = np.sqrt(Cu_joined_err[sel] **2 + (np.gradient(model,T_joined[sel] )*T_joined_err[sel])**2)
 
 
 ax[1].axhline(y=0., color='black', linestyle='--', zorder = 4)
-ax[1].errorbar(T_joined[sel], Cu_joined[sel]-model,sigmaRes, fmt = ".")
+ax[1].errorbar(T_joined[sel], Cu_joined[sel]-model,sigmaRes, fmt = ".", label = "residuals")
 
 
-ax[1].set_ylabel('$U_R- R_fit*I$ [$I$] ')
-ax[1].set_xlabel('$I$ [$A$] ')
+ax[1].set_ylabel('$R_{Cu}- R_{fit}$ [$\Omega$] ')
+ax[1].set_xlabel('$T$ [$K$] ')
 ymax = max([abs(x) for x in ax[1].get_ylim()])
 ax[1].set_ylim(-ymax, ymax)
 ax[1].legend(fontsize = 13)
 
-#fig.text(0.5,0, f'R = ({res})$\Omega$,'+' $\sigma_{R,sys}$ = '+f'{sigma_R_sys:0.2f}$\Omega$ , b = ({b})V, chi2/dof = {chisq:.1f} / {dof} = {chindof:.3f} ', horizontalalignment = "center")
+fig.text(0.5,0, f'α = ({ m_cu_2.values["Alpha"]:.4f} +/-{ m_cu_2.errors["Alpha"]:.4f})'+'$\Omega *K^{-β}$, $ß$'+f'= ({ m_cu_2.values["Beta"]:.5f} +/-{ m_cu_2.errors["Beta"]:.5f} ), chi2/dof = {m_cu_2.fval:.1f} / {len(sel - 2)}', horizontalalignment = "center")
 fig.subplots_adjust(hspace=0.0)
+plt.savefig("nonlin_cu.pdf")
+plt.show()
+#%%ta nonlin fit
+#join data for he and N
+T_joined = np.concatenate((T_N, T_He))
+T_joined_err = np.concatenate((Terr_N, Terr_He))
+
+Ta_joined = np.concatenate((Ta_new_N, Ta_new_He))
+Ta_joined_err = np.concatenate((sig_Ta_new_N, sig_Ta_new_He))
+
+
+sel = np.logical_and(Ta_joined<8, Ta_joined>0.15)
+#print(sel)
+
+#Cu_lin_selector = Cu_joined>8
+
+chi_nonlin_Ta = lambda R_zero, Alpha, Beta: chi2_nonlin(non_lin_approx, T_joined[sel], Ta_joined[sel], T_joined_err[sel], Ta_joined_err[sel], R_zero, Alpha, Beta)
+
+m_ta_2 = iminuit.Minuit(chi_nonlin_Ta, R_zero = 1, Alpha = 0.003, Beta = 5,)
+print(m_ta_2.migrad())
+
+
+model = non_lin_approx(T_joined[sel], m_ta_2.values["R_zero"], m_ta_2.values["Alpha"], m_ta_2.values["Beta"])
+
+fig, ax = fig, ax = plt.subplots(2, 1, figsize=(10,7), layout = "tight",sharex=True, gridspec_kw={'height_ratios': [5, 2]})
+
+
+ax[0].errorbar(T_joined[sel],Ta_joined[sel],Ta_joined_err[sel],T_joined_err[sel], fmt=  ".", label = "measurements")
+ax[0].scatter(T_joined[sel], model, color= "orange", label = "fit")
+ax[0].set_ylabel("$R_{Cu}$ [$\Omega$]")
+ax[0].title.set_text("nonlinear fit, copper")
+ax[0].legend(fontsize = 13)
+
+
+sigmaRes = np.sqrt(Ta_joined_err[sel] **2 + (np.gradient(model,T_joined[sel] )*T_joined_err[sel])**2)
+
+
+ax[1].axhline(y=0., color='black', linestyle='--', zorder = 4)
+ax[1].errorbar(T_joined[sel], Ta_joined[sel]-model,sigmaRes, fmt = ".", label = "residuals")
+
+
+ax[1].set_ylabel('$R_{Ta}- R_{fit}$ [$\Omega$] ')
+ax[1].set_xlabel('$T$ [$°C$] ')
+ymax = max([abs(x) for x in ax[1].get_ylim()])
+ax[1].set_ylim(-ymax, ymax)
+ax[1].legend(fontsize = 13)
+
+fig.text(0.5,0, f'α = ({ m_ta_2.values["Alpha"]:.4f} +/-{ m_ta_2.errors["Alpha"]:.4f})'+'$\Omega *K^{-β}$, $ß$'+f'= ({ m_ta_2.values["Beta"]:.5f} +/-{ m_ta_2.errors["Beta"]:.5f} ), chi2/dof = {m_ta_2.fval:.1f} / {len(sel - 2)}', horizontalalignment = "center")
+fig.subplots_adjust(hspace=0.0)
+plt.savefig("nonlin_ta.pdf")
 plt.show()
 
+
+#%% si graphs
+
+fig, ax = fig, ax = plt.subplots(3, 1, figsize=(10,15), layout = "tight")
+
+ax[0].errorbar(T_N, data_N[:, 4], sig_Si_N, Terr_N, label = "Resistances Si, N", fmt = ".")
+ax[0].errorbar(T_He[Si_filter], data_He[:, 4][Si_filter], sig_Si_He[Si_filter], Terr_He[Si_filter], label = "Resistances Si, He", fmt = ".")
+ax[0].set_xlabel("$T [K]$")
+ax[0].set_ylabel("$R [\Omega]$")
+ax[0].title.set_text("Resistance Measurement Si")
+ax[0].legend()
+
+ax[1].errorbar(np.log(T_N), np.log(data_N[:, 4]),1/data_N[:, 4] *  sig_Si_N,1/T_N* Terr_N, label = "Resistances Si, N", fmt = ".")
+ax[1].errorbar(np.log(T_He[Si_filter]), np.log(data_He[:, 4][Si_filter]), 1/data_He[:, 4][Si_filter] * sig_Si_He[Si_filter],1/T_He[Si_filter]* Terr_He[Si_filter], label = "Resistances Si, He", fmt = ".")
+ax[1].set_xlabel("$ln(T) [ln(K)]$")
+ax[1].set_ylabel("$ln(R) [ln(\Omega)]$")
+ax[1].title.set_text("Resistance Si, logscale")
+
+#ax[1].set_yscale("log")
+#ax[1].set_xscale("log")
+ax[1].legend()
+
+ax[2].errorbar(1/T_N, np.log(data_N[:, 4]), 1/data_N[:, 4] * sig_Si_N, 1/T_N**2 * Terr_N, label = "Resistances Si, N", fmt = ".")
+ax[2].errorbar(1/T_He[Si_filter], np.log(data_He[:, 4][Si_filter]), 1/data_He[:, 4][Si_filter] * sig_Si_He[Si_filter], 1/T_He[Si_filter]**2 * Terr_He[Si_filter], label = "Resistances Si, He", fmt = ".")
+ax[2].set_xlabel("$T^{-1} [K^{-1}]$")
+ax[2].set_ylabel("$ln(R) [ln(\Omega)]$")
+ax[2].title.set_text("Resistance Si, ln(R), 1/T")
+ax[2].legend()
+
+#ax[2].set_yscale("log")
+plt.savefig("si_resistances.pdf")
+
+
+plt.show()
+
+#bonus leitfähigkeit
+
+plt.errorbar(1/T_N, 1/data_N[:, 4],1/data_N[:, 4]**2 *sig_Si_N, 1/T_N**2 * Terr_N, label = "Resistances Si, N", fmt = ".")
+plt.errorbar(1/T_He[Si_filter], 1/data_He[:, 4][Si_filter], 1/(data_He[:, 4][Si_filter])**2 *  sig_Si_He[Si_filter], 1/T_He[Si_filter]**2 * Terr_He[Si_filter], label = "Resistances Si, He", fmt = ".")
+plt.xlabel("$T^{-1} [K^{-1}]$")
+plt.ylabel("$R^{-1} [\Omega^{-1}]$")
+plt.title("Conductivity Si")
+plt.legend()
+plt.yscale("log")
+plt.savefig("conductivity_si.pdf")
+
+plt.show()
+
+#plt.errorbar(1/T_N, 1/data_N[:, 4],1/data_N[:, 4]**2 *sig_Si_N, 1/T_N**2 * Terr_N, label = "Resistances Si, N", fmt = ".")
+#plt.errorbar(1/T_He[Si_filter], 1/data_He[:, 4][Si_filter], 1/(data_He[:, 4][Si_filter])**2 *  sig_Si_He[Si_filter], 1/T_He[Si_filter]**2 * Terr_He[Si_filter], label = "Resistances Si, He", fmt = ".")
+#plt.xlabel("$1/T [1/K]$")
+#plt.ylabel("$\sigma [1/\Omega]$")
+#plt.title("Resistance Measurement Si")
+#plt.legend()
+#plt.yscale("log")
+#
+#plt.show()
+
+plt.errorbar(T_N, data_N[:, 4],sig_Si_N,  Terr_N, label = "Resistances Si, N", fmt = ".")
+plt.errorbar(T_He[Si_filter][:225], data_He[:, 4][Si_filter][:225], sig_Si_He[Si_filter][:225], Terr_He[Si_filter][:225], label = "Resistances Si, He", fmt = ".", color = "orange")
+plt.xlabel("$T [K]$")
+plt.ylabel("$R [\Omega]$")
+plt.title("Measurement problems with Si")
+plt.legend()
+plt.savefig("problems_si.pdf")
+#plt.yscale("log")
+
+plt.show()
 #%%ta sprungtemp
 print(data_He[-100:-40, 1])
 plt.scatter(T_c(data_He[-89:-77, 1]), data_He[-89:-77, 3])
 plt.axhline(min(data_He[-89:, 3]))
 plt.axvline(10)
 plt.show()
+#TODO Sprungtemperatur
